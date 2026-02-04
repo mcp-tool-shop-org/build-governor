@@ -4,6 +4,16 @@ using Gov.Protocol;
 
 namespace Gov.Service;
 
+// Use camelCase for JSON serialization
+file static class Json
+{
+    public static readonly JsonSerializerOptions Options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
+}
+
 /// <summary>
 /// Named pipe server for wrapper communication.
 /// </summary>
@@ -108,7 +118,7 @@ public sealed class PipeServer : IAsyncDisposable
 
     private async Task<string> HandleAcquireAsync(string json)
     {
-        var wrapper = JsonSerializer.Deserialize<MessageWrapper<AcquireTokensRequest>>(json)!;
+        var wrapper = JsonSerializer.Deserialize<MessageWrapper<AcquireTokensRequest>>(json, Json.Options)!;
         var req = wrapper.Data;
 
         var result = await _tokenPool.TryAcquireAsync(
@@ -135,12 +145,12 @@ public sealed class PipeServer : IAsyncDisposable
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] DENIED  {req.Tool} reason={result.Reason}");
         }
 
-        return JsonSerializer.Serialize(new { type = "acquire_response", data = response });
+        return JsonSerializer.Serialize(new { type = "acquire_response", data = response }, Json.Options);
     }
 
     private async Task<string> HandleReleaseAsync(string json)
     {
-        var wrapper = JsonSerializer.Deserialize<MessageWrapper<ReleaseTokensRequest>>(json)!;
+        var wrapper = JsonSerializer.Deserialize<MessageWrapper<ReleaseTokensRequest>>(json, Json.Options)!;
         var req = wrapper.Data;
 
         var result = await _tokenPool.ReleaseAsync(
@@ -163,7 +173,7 @@ public sealed class PipeServer : IAsyncDisposable
         var status = req.ExitCode == 0 ? "OK" : result.Classification.ToString();
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] RELEASE lease={req.LeaseId} exit={req.ExitCode} peak={req.PeakCommitBytes / 1024.0 / 1024:F0}MB {status}");
 
-        return JsonSerializer.Serialize(new { type = "release_response", data = response });
+        return JsonSerializer.Serialize(new { type = "release_response", data = response }, Json.Options);
     }
 
     private string HandleStatus()
@@ -182,7 +192,7 @@ public sealed class PipeServer : IAsyncDisposable
             RecommendedParallelism = status.RecommendedParallelism
         };
 
-        return JsonSerializer.Serialize(new { type = "status_response", data = response });
+        return JsonSerializer.Serialize(new { type = "status_response", data = response }, Json.Options);
     }
 
     public async ValueTask DisposeAsync()
