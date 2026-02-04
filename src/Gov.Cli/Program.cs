@@ -85,18 +85,22 @@ static async Task<int> RunCommand(string[] args)
     var buildCommand = args[commandStart];
     var buildArgs = args.Skip(commandStart + 1).ToArray();
 
-    // Find wrapper directory
+    // Find wrapper directory - check multiple possible locations
     var exePath = Environment.ProcessPath ?? "";
     var exeDir = Path.GetDirectoryName(exePath) ?? "";
-    var wrapperDir = Path.Combine(exeDir, "..", "wrappers");
 
-    if (!Directory.Exists(wrapperDir))
-    {
-        // Try relative to project root
-        wrapperDir = Path.GetFullPath(Path.Combine(exeDir, "..", "..", "..", "..", "bin", "wrappers"));
-    }
+    // Try locations in order of priority
+    string[] candidatePaths =
+    [
+        Path.GetFullPath(Path.Combine(exeDir, "..", "wrappers")),                           // Published layout
+        Path.GetFullPath(Path.Combine(exeDir, "..", "..", "..", "..", "bin", "wrappers")), // From published cli
+        Path.GetFullPath(Path.Combine(exeDir, "..", "..", "..", "..", "..", "..", "bin", "wrappers")), // dotnet run deep nesting
+        Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "bin", "wrappers")),   // From current working dir
+    ];
 
-    if (!Directory.Exists(wrapperDir) || !File.Exists(Path.Combine(wrapperDir, "cl.exe")))
+    var wrapperDir = candidatePaths.FirstOrDefault(p => Directory.Exists(p) && File.Exists(Path.Combine(p, "cl.exe")));
+
+    if (wrapperDir == null)
     {
         Console.Error.WriteLine("Error: Wrapper directory not found. Build the wrappers first:");
         Console.Error.WriteLine("  dotnet publish src/Gov.Wrapper.CL -c Release -o bin/wrappers");
@@ -168,14 +172,21 @@ static async Task<int> RunCommand(string[] args)
     Console.WriteLine();
 
     // Run the build command
+    // Use cmd /c to execute so PATH is respected
     var psi = new ProcessStartInfo
     {
-        FileName = buildCommand,
+        FileName = "cmd.exe",
         UseShellExecute = false,
     };
 
-    foreach (var arg in buildArgs)
-        psi.ArgumentList.Add(arg);
+    // Build the full command line for cmd /c
+    var cmdLine = buildCommand;
+    if (buildArgs.Length > 0)
+    {
+        cmdLine += " " + string.Join(" ", buildArgs.Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
+    }
+    psi.ArgumentList.Add("/c");
+    psi.ArgumentList.Add(cmdLine);
 
     foreach (var (key, value) in env)
         psi.Environment[key] = value;
