@@ -6,7 +6,7 @@ namespace Gov.Common;
 /// <summary>
 /// GPU memory metrics via nvidia-smi (NVIDIA) or other tools.
 /// </summary>
-public static partial class GpuMetrics
+public static class GpuMetrics
 {
     /// <summary>
     /// Get GPU memory status for all available GPUs.

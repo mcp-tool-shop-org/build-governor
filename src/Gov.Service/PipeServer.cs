@@ -107,6 +107,7 @@ public sealed class PipeServer : IAsyncDisposable
                 "acquire" => await HandleAcquireAsync(json),
                 "release" => await HandleReleaseAsync(json),
                 "status" => HandleStatus(),
+                "heartbeat" => HandleHeartbeat(),
                 _ => JsonSerializer.Serialize(new { error = $"Unknown message type: {type}" })
             };
         }
@@ -193,6 +194,11 @@ public sealed class PipeServer : IAsyncDisposable
         };
 
         return JsonSerializer.Serialize(new { type = "status_response", data = response }, Json.Options);
+    }
+
+    private string HandleHeartbeat()
+    {
+        return JsonSerializer.Serialize(new { type = "heartbeat_response", data = new { alive = true, timestamp = DateTime.UtcNow } }, Json.Options);
     }
 
     public async ValueTask DisposeAsync()

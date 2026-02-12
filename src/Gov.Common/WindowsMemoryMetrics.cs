@@ -1,10 +1,12 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Gov.Common;
 
 /// <summary>
 /// Windows memory metrics via GlobalMemoryStatusEx and performance counters.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public static class WindowsMemoryMetrics
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]

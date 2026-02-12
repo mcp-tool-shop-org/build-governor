@@ -46,7 +46,7 @@ public sealed class TokenPool : IDisposable
     /// <summary>
     /// Try to acquire tokens for a build operation.
     /// </summary>
-    public async Task<AcquireResult> TryAcquireAsync(
+    public async Task<TokenAcquireResult> TryAcquireAsync(
         string tool,
         int requestedTokens,
         int timeoutMs,
@@ -66,7 +66,7 @@ public sealed class TokenPool : IDisposable
                 // Check throttle level
                 if (_throttleLevel == ThrottleLevel.HardStop)
                 {
-                    return new AcquireResult
+                    return new TokenAcquireResult
                     {
                         Success = false,
                         Reason = $"System under memory pressure (commit {_lastMemoryStatus.CommitRatio:P0}). Hard stop active.",
@@ -92,7 +92,7 @@ public sealed class TokenPool : IDisposable
                     _activeLeases[leaseId] = lease;
                     _availableTokens -= grantedTokens;
 
-                    return new AcquireResult
+                    return new TokenAcquireResult
                     {
                         Success = true,
                         LeaseId = leaseId,
@@ -118,7 +118,7 @@ public sealed class TokenPool : IDisposable
             await Task.Delay(delay, ct);
         }
 
-        return new AcquireResult
+        return new TokenAcquireResult
         {
             Success = false,
             Reason = "Timeout waiting for available tokens",
@@ -129,7 +129,7 @@ public sealed class TokenPool : IDisposable
     /// <summary>
     /// Release tokens back to the pool.
     /// </summary>
-    public async Task<ReleaseResult> ReleaseAsync(
+    public async Task<TokenReleaseResult> ReleaseAsync(
         string leaseId,
         long peakWorkingSetBytes,
         long peakCommitBytes,
@@ -142,7 +142,7 @@ public sealed class TokenPool : IDisposable
         {
             if (!_activeLeases.TryRemove(leaseId, out var lease))
             {
-                return new ReleaseResult { Acknowledged = false };
+                return new TokenReleaseResult { Acknowledged = false };
             }
 
             _availableTokens += lease.Tokens;
@@ -166,7 +166,7 @@ public sealed class TokenPool : IDisposable
 
             var classification = FailureClassifier.Classify(classificationInput);
 
-            return new ReleaseResult
+            return new TokenReleaseResult
             {
                 Acknowledged = true,
                 Classification = classification.Classification,
@@ -313,7 +313,7 @@ public sealed record Lease
     public bool WarningLogged { get; set; }
 }
 
-public sealed record AcquireResult
+public sealed record TokenAcquireResult
 {
     public required bool Success { get; init; }
     public string? LeaseId { get; init; }
@@ -323,7 +323,7 @@ public sealed record AcquireResult
     public double CommitRatio { get; init; }
 }
 
-public sealed record ReleaseResult
+public sealed record TokenReleaseResult
 {
     public required bool Acknowledged { get; init; }
     public Protocol.FailureClassification Classification { get; init; }

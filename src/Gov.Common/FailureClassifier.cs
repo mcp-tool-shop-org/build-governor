@@ -70,7 +70,7 @@ public static class FailureClassifier
 
         // Classify based on evidence
         FailureClassification classification;
-        string message;
+        string? message;
         bool shouldRetry;
 
         if (oomEvidence >= 0.6)

@@ -109,14 +109,14 @@ static async Task<int> RunCommand(string[] args)
     }
 
     // Check if governor is running
-    var governorRunning = await IsGovernorRunning();
+    var governorRunning = IsGovernorRunning();
 
     if (!governorRunning)
     {
         if (autoStart)
         {
             Console.WriteLine("[gov] Starting governor...");
-            if (!await TryStartGovernor(exeDir))
+            if (!TryStartGovernor(exeDir))
             {
                 Console.WriteLine("[gov] Warning: Could not start governor. Running ungoverned.");
             }
@@ -126,7 +126,7 @@ static async Task<int> RunCommand(string[] args)
                 for (var i = 0; i < 10; i++)
                 {
                     await Task.Delay(200);
-                    if (await IsGovernorRunning())
+                    if (IsGovernorRunning())
                     {
                         Console.WriteLine("[gov] Governor ready.");
                         break;
@@ -259,7 +259,7 @@ static async Task<int> StatusCommand()
     }
 }
 
-static async Task<bool> IsGovernorRunning()
+static bool IsGovernorRunning()
 {
     try
     {
@@ -273,7 +273,7 @@ static async Task<bool> IsGovernorRunning()
     }
 }
 
-static async Task<bool> TryStartGovernor(string exeDir)
+static bool TryStartGovernor(string exeDir)
 {
     try
     {
@@ -289,8 +289,7 @@ static async Task<bool> TryStartGovernor(string exeDir)
             FileName = "dotnet",
             Arguments = $"run --project \"{serviceDir}\" -c Release",
             UseShellExecute = false,
-            CreateNoWindow = false,
-            WindowStyle = ProcessWindowStyle.Minimized
+            CreateNoWindow = true
         };
 
         Process.Start(psi);

@@ -1,11 +1,13 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Gov.Common;
 
 /// <summary>
 /// Process-level memory metrics.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public static class ProcessMetrics
 {
     [StructLayout(LayoutKind.Sequential)]
