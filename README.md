@@ -2,6 +2,13 @@
 
 Prevents C++ build systems from freezing your machine or failing silently due to memory exhaustion.
 
+## NuGet Packages
+
+| Package | Description |
+|---------|-------------|
+| `Gov.Protocol` | Shared message DTOs for client-service communication over named pipes. Token requests, grants, heartbeats, and failure classification. |
+| `Gov.Common` | Windows memory metrics, OOM failure classification, and named-pipe client. Commit-charge monitoring and token-budget calculation. |
+
 ## The Problem
 
 Parallel C++ builds (`cmake --parallel`, `msbuild /m`, `ninja -j`) can easily exhaust system memory:
