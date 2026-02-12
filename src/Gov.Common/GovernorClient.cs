@@ -22,9 +22,11 @@ public sealed class GovernorClient : IDisposable
     public bool IsConnected => _connected;
 
     /// <summary>
-    /// Try to connect to the governor. Returns false if unavailable (fail-safe).
+    /// Try to connect to the governor. If not running, attempts to auto-start.
+    /// Returns false if unavailable after all attempts (fail-safe).
     /// </summary>
-    public bool TryConnect()
+    /// <param name="autoStart">If true, attempt to start governor if not running (default: true)</param>
+    public bool TryConnect(bool autoStart = true)
     {
         try
         {
@@ -37,6 +39,27 @@ public sealed class GovernorClient : IDisposable
         }
         catch (TimeoutException)
         {
+            // Governor not running - try to auto-start if enabled
+            if (autoStart && GovernorAutoStart.EnsureRunning())
+            {
+                // Retry connection after auto-start
+                try
+                {
+                    _pipe?.Dispose();
+                    _pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut);
+                    _pipe.Connect(ConnectTimeoutMs);
+                    _reader = new StreamReader(_pipe);
+                    _writer = new StreamWriter(_pipe) { AutoFlush = true };
+                    _connected = true;
+                    return true;
+                }
+                catch
+                {
+                    PrintWarning("Governor auto-started but connection failed — running ungoverned.");
+                    return false;
+                }
+            }
+
             PrintWarning("Governor not running — running ungoverned.");
             return false;
         }
