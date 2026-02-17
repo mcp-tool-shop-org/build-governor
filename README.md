@@ -1,5 +1,8 @@
 # Build Reliability Governor
 
+> Part of [MCP Tool Shop](https://mcptoolshop.com)
+
+
 **Automatic protection** against C++ build memory exhaustion. No manual steps required.
 
 ## The Problem
