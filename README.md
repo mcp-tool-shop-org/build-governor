@@ -1,3 +1,5 @@
+<p align="center"><img src="logo.png" alt="logo" width="200"></p>
+
 # Build Reliability Governor
 
 > Part of [MCP Tool Shop](https://mcptoolshop.com)
