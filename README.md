@@ -4,27 +4,29 @@
 
 > Part of [MCP Tool Shop](https://mcptoolshop.com)
 
+[![Gov.Protocol on NuGet](https://img.shields.io/nuget/v/Gov.Protocol?label=Gov.Protocol&color=blue)](https://www.nuget.org/packages/Gov.Protocol)
+[![Gov.Common on NuGet](https://img.shields.io/nuget/v/Gov.Common?label=Gov.Common&color=blue)](https://www.nuget.org/packages/Gov.Common)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Automatic protection** against C++ build memory exhaustion. No manual steps required.
+**Automatic protection against C++ build memory exhaustion. No manual steps required.**
 
-## The Problem
+## Why
 
 Parallel C++ builds (`cmake --parallel`, `msbuild /m`, `ninja -j`) can easily exhaust system memory:
 
-- Each `cl.exe` instance can use 1-4 GB RAM (templates, LTCG, heavy headers)
+- Each `cl.exe` instance can use 1–4 GB RAM (templates, LTCG, heavy headers)
 - Build systems launch N parallel jobs and hope for the best
 - When RAM exhausts: system freeze, or `CL.exe exited with code 1` (no diagnostic)
 - The killer metric is **Commit Charge**, not "free RAM"
 
-## The Solution
 
-A lightweight governor that **automatically** sits between your build system and the compiler:
+Build Governor is a lightweight governor that **automatically** sits between your build system and the compiler:
 
-1. **Zero-config protection**: Wrappers auto-start governor on first build
+1. **Zero-config protection** — Wrappers auto-start governor on first build
 2. **Adaptive concurrency** based on commit charge, not job count
-3. **Silent failure → actionable diagnosis**: "Memory pressure detected, recommend -j4"
-4. **Auto-throttling**: builds slow down instead of crashing
-5. **Fail-safe**: if governor is down, tools run ungoverned
+3. **Silent failure → actionable diagnosis** — "Memory pressure detected, recommend -j4"
+4. **Auto-throttling** — builds slow down instead of crashing
+5. **Fail-safe** — if governor is down, tools run ungoverned
 
 ## Quick Start (Automatic Protection)
 
@@ -73,10 +75,18 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 
 ## NuGet Packages
 
-| Package | Description |
-|---------|-------------|
-| `Gov.Protocol` | Shared message DTOs for client-service communication over named pipes. |
-| `Gov.Common` | Windows memory metrics, OOM classification, auto-start client. |
+| Package | Version | Description |
+|---------|---------|-------------|
+| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | Shared message DTOs for client–service communication over named pipes. |
+| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Windows memory metrics, OOM classification, auto-start client. |
+
+```xml
+<!-- Gov.Protocol — message DTOs only (no Windows dependency) -->
+<PackageReference Include="Gov.Protocol" Version="1.*" />
+
+<!-- Gov.Common — memory metrics + OOM classifier (Windows) -->
+<PackageReference Include="Gov.Common" Version="1.*" />
+```
 
 ## How It Works
 
@@ -142,18 +152,18 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 | Action | Tokens | Notes |
 |--------|--------|-------|
 | Normal compile | 1 | Baseline |
-| Heavy compile (Boost/gRPC) | 2-4 | Template-heavy |
+| Heavy compile (Boost/gRPC) | 2–4 | Template-heavy |
 | Compile with /GL | +3 | LTCG codegen |
 | Link | 4 | Base link cost |
-| Link with /LTCG | 8-12 | Full LTCG |
+| Link with /LTCG | 8–12 | Full LTCG |
 
 ## Throttle Levels
 
 | Commit Ratio | Level | Behavior |
 |--------------|-------|----------|
 | < 80% | Normal | Grant tokens immediately |
-| 80-88% | Caution | Slower grants, delay 200ms |
-| 88-92% | SoftStop | Significant delays, 500ms |
+| 80–88% | Caution | Slower grants, delay 200 ms |
+| 88–92% | SoftStop | Significant delays, 500 ms |
 | > 92% | HardStop | Refuse new tokens |
 
 ## Failure Classification
@@ -245,4 +255,4 @@ When multiple compilers start simultaneously:
 
 ## License
 
-MIT
+[MIT](LICENSE)
