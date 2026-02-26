@@ -14,27 +14,27 @@
   <a href="https://mcp-tool-shop-org.github.io/build-governor/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
 </p>
 
-**Automatic protection against C++ build memory exhaustion. No manual steps required.**
+**自动保护 C++ 构建过程，防止因内存耗尽而崩溃。无需手动操作。**
 
-## Why
+## 原因
 
-Parallel C++ builds (`cmake --parallel`, `msbuild /m`, `ninja -j`) can easily exhaust system memory:
+并行 C++ 构建（`cmake --parallel`、`msbuild /m`、`ninja -j`）很容易耗尽系统内存：
 
-- Each `cl.exe` instance can use 1–4 GB RAM (templates, LTCG, heavy headers)
-- Build systems launch N parallel jobs and hope for the best
-- When RAM exhausts: system freeze, or `CL.exe exited with code 1` (no diagnostic)
-- The killer metric is **Commit Charge**, not "free RAM"
+- 每个 `cl.exe` 实例可能使用 1–4 GB 的 RAM（模板、LTCG、大量头文件）
+- 构建系统启动 N 个并行任务，并希望一切顺利
+- 当 RAM 耗尽时：系统冻结，或者出现 `CL.exe exited with code 1` 错误（没有诊断信息）
+- 关键指标是 **已分配内存**，而不是“可用 RAM”
 
 
-Build Governor is a lightweight governor that **automatically** sits between your build system and the compiler:
+构建管理器是一个轻量级的管理器，它**自动**位于您的构建系统和编译器之间：
 
-1. **Zero-config protection** — Wrappers auto-start governor on first build
-2. **Adaptive concurrency** based on commit charge, not job count
-3. **Silent failure → actionable diagnosis** — "Memory pressure detected, recommend -j4"
-4. **Auto-throttling** — builds slow down instead of crashing
-5. **Fail-safe** — if governor is down, tools run ungoverned
+1. **零配置保护**：包装程序会在首次构建时自动启动管理器
+2. **自适应并发**：基于已分配内存，而不是任务数量
+3. **将错误转换为可操作的诊断信息**：“检测到内存压力，建议使用 -j4”
+4. **自动降速**：构建速度变慢，而不是崩溃
+5. **安全机制**：如果管理器不可用，则工具以未受限的方式运行
 
-## Quick Start (Automatic Protection)
+## 快速入门（自动保护）
 
 ```powershell
 # One-time setup (no admin required)
@@ -47,23 +47,23 @@ msbuild /m:16
 ninja -j 8
 ```
 
-The wrappers automatically:
-- Start the governor if it's not running
-- Monitor memory and throttle when needed
-- Shut down after 30 min of inactivity
+包装程序会自动：
+- 如果管理器未运行，则启动管理器
+- 监控内存，并在需要时进行降速
+- 30 分钟无操作后自动停止
 
-## Alternative: Windows Service (Enterprise)
+## 替代方案：Windows 服务（企业版）
 
-For always-on protection across all users:
+为了在所有用户中提供始终在线的保护：
 
 ```powershell
 # Requires Administrator
 .\scripts\install-service.ps1
 ```
 
-## Manual Mode
+## 手动模式
 
-If you prefer explicit control:
+如果您喜欢明确的控制：
 
 ```powershell
 # 1. Build
@@ -79,12 +79,12 @@ dotnet run --project src/Gov.Service -c Release
 bin/cli/gov.exe run -- cmake --build . --parallel 16
 ```
 
-## NuGet Packages
+## NuGet 包
 
-| Package | Version | Description |
-|---------|---------|-------------|
-| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | Shared message DTOs for client–service communication over named pipes. |
-| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Windows memory metrics, OOM classification, auto-start client. |
+| 包 | 版本 | 描述 |
+| --------- | --------- | ------------- |
+| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | 用于客户端和服务之间通过命名管道进行通信的共享消息 DTO。 |
+| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Windows 内存指标、OOM 分类、自动启动客户端。 |
 
 ```xml
 <!-- Gov.Protocol — message DTOs only (no Windows dependency) -->
@@ -94,9 +94,9 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 <PackageReference Include="Gov.Common" Version="1.*" />
 ```
 
-## How It Works
+## 工作原理
 
-### Automatic Protection Flow
+### 自动保护流程
 
 ```
   cmake --build .
@@ -129,7 +129,7 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
     Release tokens
 ```
 
-### Architecture
+### 架构
 
 ```
                     ┌─────────────────┐
@@ -153,35 +153,35 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
     └─────────┘        └─────────┘        └─────────┘
 ```
 
-## Token Cost Model
+## 令牌成本模型
 
-| Action | Tokens | Notes |
-|--------|--------|-------|
-| Normal compile | 1 | Baseline |
-| Heavy compile (Boost/gRPC) | 2–4 | Template-heavy |
-| Compile with /GL | +3 | LTCG codegen |
-| Link | 4 | Base link cost |
-| Link with /LTCG | 8–12 | Full LTCG |
+| 操作 | 令牌 | Notes |
+| -------- | -------- | ------- |
+| 正常编译 | 1 | 基线 |
+| 高强度编译（Boost/gRPC） | 2–4 | 模板密集型 |
+| 使用 /GL 编译 | +3 | LTCG 代码生成 |
+| Link | 4 | 基本链接成本 |
+| 使用 /LTCG 链接 | 8–12 | 完整 LTCG |
 
-## Throttle Levels
+## 降速级别
 
-| Commit Ratio | Level | Behavior |
-|--------------|-------|----------|
-| < 80% | Normal | Grant tokens immediately |
-| 80–88% | Caution | Slower grants, delay 200 ms |
-| 88–92% | SoftStop | Significant delays, 500 ms |
-| > 92% | HardStop | Refuse new tokens |
+| 已分配内存比率 | Level | 行为 |
+| -------------- | ------- | ---------- |
+| < 80% | 正常 | 立即授予令牌 |
+| 80–88% | 警告 | 授予速度较慢，延迟 200 毫秒 |
+| 88–92% | 软降速 | 明显延迟，500 毫秒 |
+| > 92% | 硬降速 | 拒绝新的令牌 |
 
-## Failure Classification
+## 错误分类
 
-When a build tool exits with an error, the governor classifies it:
+当构建工具出现错误时退出，管理器会对其进行分类：
 
-- **LikelyOOM**: High commit ratio + process peaked high + no compiler diagnostics
-- **LikelyPagingDeath**: Moderate pressure signals
-- **NormalCompileError**: Compiler diagnostics present in stderr
-- **Unknown**: Can't determine
+- **LikelyOOM**: 已分配内存比率高 + 进程峰值很高 + 编译器没有诊断信息
+- **LikelyPagingDeath**: 出现中等程度的压力信号
+- **NormalCompileError**: 编译器诊断信息出现在标准错误输出中
+- **Unknown**: 无法确定
 
-On OOM, you see:
+当发生 OOM 时，您会看到：
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║  BUILD FAILED: Memory Pressure Detected                          ║
@@ -197,14 +197,14 @@ On OOM, you see:
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-## Safety Features
+## 安全特性
 
-- **Fail-safe**: If governor unavailable, wrappers run tools ungoverned
-- **Lease TTL**: If wrapper crashes, tokens auto-reclaim after 30 min
-- **No deadlock**: Timeouts on all pipe operations
-- **Tool auto-detection**: Uses vswhere to find real cl.exe/link.exe
+- **安全机制**：如果管理器不可用，包装程序以未受限的方式运行工具
+- **租约 TTL**：如果包装程序崩溃，令牌将在 30 分钟后自动回收
+- **无死锁**：所有管道操作都有超时机制
+- **工具自动检测**：使用 vswhere 查找真实的 cl.exe/link.exe
 
-## CLI Commands
+## 命令行
 
 ```powershell
 # Run a governed build
@@ -217,17 +217,17 @@ gov status
 gov run --no-start -- ninja -j 8
 ```
 
-## Environment Variables
+## 环境变量
 
-| Variable | Description |
-|----------|-------------|
-| `GOV_REAL_CL` | Path to real cl.exe (auto-detected via vswhere) |
-| `GOV_REAL_LINK` | Path to real link.exe (auto-detected) |
-| `GOV_ENABLED` | Set by `gov run` to indicate governed mode |
-| `GOV_SERVICE_PATH` | Path to Gov.Service.exe for auto-start |
-| `GOV_DEBUG` | Set to "1" for verbose auto-start logging |
+| 变量 | 描述 |
+| ---------- | ------------- |
+| `GOV_REAL_CL` | 真实 cl.exe 的路径（通过 vswhere 自动检测） |
+| `GOV_REAL_LINK` | `link.exe` 文件的实际路径（自动检测）。 |
+| `GOV_ENABLED` | 由 `gov run` 命令设置，用于指示受控模式。 |
+| `GOV_SERVICE_PATH` | `Gov.Service.exe` 文件的路径，用于自动启动。 |
+| `GOV_DEBUG` | 设置为 "1" 以启用详细的自动启动日志记录。 |
 
-## Project Structure
+## 项目结构
 
 ```
 build-governor/
@@ -249,16 +249,16 @@ build-governor/
 └── gov-env.cmd          # Manual PATH setup
 ```
 
-## Auto-Start Behavior
+## 自动启动行为
 
-The wrappers use a global mutex to ensure only one governor instance runs.
-When multiple compilers start simultaneously:
+这些包装程序使用一个全局互斥锁，以确保只有一个治理程序实例运行。
+当多个编译器同时启动时：
 
-1. First wrapper acquires mutex, checks if governor running
-2. If not, starts `Gov.Service.exe --background`
-3. Other wrappers wait on mutex, then connect to now-running governor
-4. Background mode: governor shuts down after 30 min idle
+1. 第一个包装程序获取互斥锁，检查治理程序是否正在运行。
+2. 如果没有运行，则启动 `Gov.Service.exe --background`。
+3. 其他包装程序等待互斥锁，然后连接到现在正在运行的治理程序。
+4. 后台模式：治理程序在 30 分钟无操作后自动关闭。
 
-## License
+## 许可证
 
 [MIT](LICENSE)

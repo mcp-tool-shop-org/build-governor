@@ -14,27 +14,27 @@
   <a href="https://mcp-tool-shop-org.github.io/build-governor/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
 </p>
 
-**Automatic protection against C++ build memory exhaustion. No manual steps required.**
+**C++ ビルド時のメモリ枯渇に対する自動保護機能。手動での設定は不要です。**
 
-## Why
+## なぜ
 
-Parallel C++ builds (`cmake --parallel`, `msbuild /m`, `ninja -j`) can easily exhaust system memory:
+並列C++ビルド（`cmake --parallel`、`msbuild /m`、`ninja -j`）は、システムメモリを容易に使い果たす可能性があります。
 
-- Each `cl.exe` instance can use 1–4 GB RAM (templates, LTCG, heavy headers)
-- Build systems launch N parallel jobs and hope for the best
-- When RAM exhausts: system freeze, or `CL.exe exited with code 1` (no diagnostic)
-- The killer metric is **Commit Charge**, not "free RAM"
+- `cl.exe` の各インスタンスは、1～4GBのRAMを使用する可能性があります（テンプレート、LTCG、大量のヘッダーファイル）。
+- ビルドシステムは、N個の並列ジョブを開始し、最善を祈ります。
+- RAMが使い果たされると：システムがフリーズするか、`CL.exe` がコード1で終了します（診断情報は表示されません）。
+- 重要な指標は、**コミット容量**であり、「空きRAM」ではありません。
 
 
-Build Governor is a lightweight governor that **automatically** sits between your build system and the compiler:
+Build Governorは、軽量な制御機能で、**自動的に**あなたのビルドシステムとコンパイラの間に入ります。
 
-1. **Zero-config protection** — Wrappers auto-start governor on first build
-2. **Adaptive concurrency** based on commit charge, not job count
-3. **Silent failure → actionable diagnosis** — "Memory pressure detected, recommend -j4"
-4. **Auto-throttling** — builds slow down instead of crashing
-5. **Fail-safe** — if governor is down, tools run ungoverned
+1. **設定不要の保護機能**：ラッパーが、最初のビルド時に自動的に制御機能を起動します。
+2. **適応的な並列処理**：ジョブ数ではなく、コミット容量に基づいて調整します。
+3. **エラーの診断**：「メモリ不足が検出されました。-j4の使用を推奨します」というメッセージを表示します。
+4. **自動スロットリング**：ビルドがクラッシュする代わりに、速度が低下します。
+5. **安全機能**：制御機能が停止した場合でも、ツールは制御なしで実行されます。
 
-## Quick Start (Automatic Protection)
+## クイックスタート（自動保護）
 
 ```powershell
 # One-time setup (no admin required)
@@ -47,23 +47,23 @@ msbuild /m:16
 ninja -j 8
 ```
 
-The wrappers automatically:
-- Start the governor if it's not running
-- Monitor memory and throttle when needed
-- Shut down after 30 min of inactivity
+ラッパーは、自動的に以下の処理を行います。
+- 制御機能が実行されていない場合は、起動します。
+- メモリを監視し、必要に応じてスロットリングを行います。
+- 30分間の非アクティブ状態の後、停止します。
 
-## Alternative: Windows Service (Enterprise)
+## 代替手段：Windowsサービス（エンタープライズ版）
 
-For always-on protection across all users:
+すべてのユーザーに対して、常に保護機能を有効にする場合：
 
 ```powershell
 # Requires Administrator
 .\scripts\install-service.ps1
 ```
 
-## Manual Mode
+## 手動モード
 
-If you prefer explicit control:
+明示的な制御を好む場合：
 
 ```powershell
 # 1. Build
@@ -79,12 +79,12 @@ dotnet run --project src/Gov.Service -c Release
 bin/cli/gov.exe run -- cmake --build . --parallel 16
 ```
 
-## NuGet Packages
+## NuGetパッケージ
 
-| Package | Version | Description |
-|---------|---------|-------------|
-| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | Shared message DTOs for client–service communication over named pipes. |
-| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Windows memory metrics, OOM classification, auto-start client. |
+| パッケージ | バージョン | 説明 |
+| --------- | --------- | ------------- |
+| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | クライアントとサービス間の通信に使用する共有メッセージDTO。名前付きパイプを使用します。 |
+| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Windowsのメモリメトリクス、OOM（Out Of Memory）分類、クライアントの自動起動機能。 |
 
 ```xml
 <!-- Gov.Protocol — message DTOs only (no Windows dependency) -->
@@ -94,9 +94,9 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 <PackageReference Include="Gov.Common" Version="1.*" />
 ```
 
-## How It Works
+## 仕組み
 
-### Automatic Protection Flow
+### 自動保護のフロー
 
 ```
   cmake --build .
@@ -129,7 +129,7 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
     Release tokens
 ```
 
-### Architecture
+### アーキテクチャ
 
 ```
                     ┌─────────────────┐
@@ -153,35 +153,35 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
     └─────────┘        └─────────┘        └─────────┘
 ```
 
-## Token Cost Model
+## トークンコストモデル
 
-| Action | Tokens | Notes |
-|--------|--------|-------|
-| Normal compile | 1 | Baseline |
-| Heavy compile (Boost/gRPC) | 2–4 | Template-heavy |
-| Compile with /GL | +3 | LTCG codegen |
-| Link | 4 | Base link cost |
-| Link with /LTCG | 8–12 | Full LTCG |
+| アクション | トークン | Notes |
+| -------- | -------- | ------- |
+| 通常のコンパイル | 1 | ベースライン |
+| 負荷の高いコンパイル（Boost/gRPC） | 2–4 | テンプレートが多い |
+| `/GL` オプション付きのコンパイル | +3 | LTCGコード生成 |
+| Link | 4 | ベースリンクコスト |
+| `/LTCG` オプション付きのリンク | 8–12 | フルLTCG |
 
-## Throttle Levels
+## スロットリングレベル
 
-| Commit Ratio | Level | Behavior |
-|--------------|-------|----------|
-| < 80% | Normal | Grant tokens immediately |
-| 80–88% | Caution | Slower grants, delay 200 ms |
-| 88–92% | SoftStop | Significant delays, 500 ms |
-| > 92% | HardStop | Refuse new tokens |
+| コミット比率 | Level | 動作 |
+| -------------- | ------- | ---------- |
+| < 80% | 通常 | すぐにトークンを付与 |
+| 80～88% | 注意 | 付与速度が遅く、200msの遅延 |
+| 88～92% | ソフトストップ | 大きな遅延、500ms |
+| > 92% | ハードストップ | 新しいトークンの付与を拒否 |
 
-## Failure Classification
+## エラー分類
 
-When a build tool exits with an error, the governor classifies it:
+ビルドツールがエラーで終了した場合、制御機能はそれを分類します。
 
-- **LikelyOOM**: High commit ratio + process peaked high + no compiler diagnostics
-- **LikelyPagingDeath**: Moderate pressure signals
-- **NormalCompileError**: Compiler diagnostics present in stderr
-- **Unknown**: Can't determine
+- **LikelyOOM**: コミット比率が高い + プロセスがピーク時に高い + コンパイラの診断情報がない
+- **LikelyPagingDeath**: 中程度のメモリ圧迫の兆候
+- **NormalCompileError**: コンパイラの診断情報がstderrに表示されている
+- **Unknown**: 判別できない
 
-On OOM, you see:
+OOMが発生した場合、以下が表示されます。
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║  BUILD FAILED: Memory Pressure Detected                          ║
@@ -197,14 +197,14 @@ On OOM, you see:
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-## Safety Features
+## 安全機能
 
-- **Fail-safe**: If governor unavailable, wrappers run tools ungoverned
-- **Lease TTL**: If wrapper crashes, tokens auto-reclaim after 30 min
-- **No deadlock**: Timeouts on all pipe operations
-- **Tool auto-detection**: Uses vswhere to find real cl.exe/link.exe
+- **安全機能**: 制御機能が利用できない場合、ラッパーはツールを制御なしで実行します。
+- **リースTTL**: ラッパーがクラッシュした場合、トークンは30分後に自動的に回収されます。
+- **デッドロックなし**: すべてのパイプ操作にタイムアウトを設定しています。
+- **ツールの自動検出**: vswhereを使用して、実際のcl.exe/link.exeを検出します。
 
-## CLI Commands
+## CLIコマンド
 
 ```powershell
 # Run a governed build
@@ -217,17 +217,17 @@ gov status
 gov run --no-start -- ninja -j 8
 ```
 
-## Environment Variables
+## 環境変数
 
-| Variable | Description |
-|----------|-------------|
-| `GOV_REAL_CL` | Path to real cl.exe (auto-detected via vswhere) |
-| `GOV_REAL_LINK` | Path to real link.exe (auto-detected) |
-| `GOV_ENABLED` | Set by `gov run` to indicate governed mode |
-| `GOV_SERVICE_PATH` | Path to Gov.Service.exe for auto-start |
-| `GOV_DEBUG` | Set to "1" for verbose auto-start logging |
+| 変数 | 説明 |
+| ---------- | ------------- |
+| `GOV_REAL_CL` | 実際のcl.exeへのパス（vswhereによって自動検出されます）。 |
+| `GOV_REAL_LINK` | `link.exe` へのパス（自動検出） |
+| `GOV_ENABLED` | `gov run` コマンドによって、管理モードであることを示すために設定されます。 |
+| `GOV_SERVICE_PATH` | 自動起動のための `Gov.Service.exe` へのパス。 |
+| `GOV_DEBUG` | 詳細な自動起動ログを出力する場合は "1" に設定します。 |
 
-## Project Structure
+## プロジェクト構成
 
 ```
 build-governor/
@@ -249,16 +249,16 @@ build-governor/
 └── gov-env.cmd          # Manual PATH setup
 ```
 
-## Auto-Start Behavior
+## 自動起動時の動作
 
-The wrappers use a global mutex to ensure only one governor instance runs.
-When multiple compilers start simultaneously:
+このツールは、グローバルミューテックスを使用して、管理プロセスが1つしか実行されないようにします。
+複数のコンパイラが同時に起動する場合：
 
-1. First wrapper acquires mutex, checks if governor running
-2. If not, starts `Gov.Service.exe --background`
-3. Other wrappers wait on mutex, then connect to now-running governor
-4. Background mode: governor shuts down after 30 min idle
+1. 最初のラッパーがミューテックスを取得し、管理プロセスが実行中かどうかを確認します。
+2. 実行中でない場合、`Gov.Service.exe --background` を起動します。
+3. 他のラッパーはミューテックスを待機し、起動済みの管理プロセスに接続します。
+4. バックグラウンドモードでは、管理プロセスは30分間アイドル状態になるとシャットダウンします。
 
-## License
+## ライセンス
 
 [MIT](LICENSE)

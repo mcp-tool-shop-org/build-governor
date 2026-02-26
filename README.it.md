@@ -14,27 +14,27 @@
   <a href="https://mcp-tool-shop-org.github.io/build-governor/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
 </p>
 
-**Automatic protection against C++ build memory exhaustion. No manual steps required.**
+**Protezione automatica contro l'esaurimento della memoria durante la compilazione C++. Non sono necessari passaggi manuali.**
 
-## Why
+## Perché
 
-Parallel C++ builds (`cmake --parallel`, `msbuild /m`, `ninja -j`) can easily exhaust system memory:
+Le compilazioni C++ parallele (`cmake --parallel`, `msbuild /m`, `ninja -j`) possono facilmente esaurire la memoria del sistema:
 
-- Each `cl.exe` instance can use 1–4 GB RAM (templates, LTCG, heavy headers)
-- Build systems launch N parallel jobs and hope for the best
-- When RAM exhausts: system freeze, or `CL.exe exited with code 1` (no diagnostic)
-- The killer metric is **Commit Charge**, not "free RAM"
+- Ogni istanza di `cl.exe` può utilizzare da 1 a 4 GB di RAM (modelli, ottimizzazione del collegamento, grandi quantità di header)
+- I sistemi di compilazione avviano N processi paralleli e sperano nel meglio
+- Quando la RAM si esaurisce: il sistema si blocca o `CL.exe è terminato con codice 1` (nessuna informazione diagnostica)
+- La metrica cruciale è il **Commit Charge**, non la "RAM libera"
 
 
-Build Governor is a lightweight governor that **automatically** sits between your build system and the compiler:
+Build Governor è un gestore leggero che si posiziona **automaticamente** tra il tuo sistema di compilazione e il compilatore:
 
-1. **Zero-config protection** — Wrappers auto-start governor on first build
-2. **Adaptive concurrency** based on commit charge, not job count
-3. **Silent failure → actionable diagnosis** — "Memory pressure detected, recommend -j4"
-4. **Auto-throttling** — builds slow down instead of crashing
-5. **Fail-safe** — if governor is down, tools run ungoverned
+1. **Protezione senza configurazione** — I wrapper avviano automaticamente il gestore alla prima compilazione
+2. **Concorrenza adattiva** basata sul commit charge, non sul numero di processi
+3. **Errore silenzioso → diagnosi utile** — "Pressione di memoria rilevata, si consiglia -j4"
+4. **Limitazione automatica** — le compilazioni rallentano invece di interrompersi
+5. **Sicurezza** — se il gestore non è attivo, gli strumenti vengono eseguiti senza controllo
 
-## Quick Start (Automatic Protection)
+## Guida rapida (Protezione automatica)
 
 ```powershell
 # One-time setup (no admin required)
@@ -47,23 +47,23 @@ msbuild /m:16
 ninja -j 8
 ```
 
-The wrappers automatically:
-- Start the governor if it's not running
-- Monitor memory and throttle when needed
-- Shut down after 30 min of inactivity
+I wrapper eseguono automaticamente le seguenti operazioni:
+- Avviano il gestore se non è in esecuzione
+- Monitorano la memoria e limitano l'attività quando necessario
+- Si arrestano dopo 30 minuti di inattività
 
-## Alternative: Windows Service (Enterprise)
+## Alternativa: Servizio Windows (per aziende)
 
-For always-on protection across all users:
+Per una protezione continua per tutti gli utenti:
 
 ```powershell
 # Requires Administrator
 .\scripts\install-service.ps1
 ```
 
-## Manual Mode
+## Modalità manuale
 
-If you prefer explicit control:
+Se preferisci un controllo esplicito:
 
 ```powershell
 # 1. Build
@@ -79,12 +79,12 @@ dotnet run --project src/Gov.Service -c Release
 bin/cli/gov.exe run -- cmake --build . --parallel 16
 ```
 
-## NuGet Packages
+## Pacchetti NuGet
 
-| Package | Version | Description |
-|---------|---------|-------------|
-| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | Shared message DTOs for client–service communication over named pipes. |
-| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Windows memory metrics, OOM classification, auto-start client. |
+| Pacchetto | Versione | Descrizione |
+| --------- | --------- | ------------- |
+| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | DTO di messaggi condivisi per la comunicazione client-servizio tramite pipe denominate. |
+| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Metriche di memoria di Windows, classificazione OOM, avvio automatico del client. |
 
 ```xml
 <!-- Gov.Protocol — message DTOs only (no Windows dependency) -->
@@ -94,9 +94,9 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 <PackageReference Include="Gov.Common" Version="1.*" />
 ```
 
-## How It Works
+## Come funziona
 
-### Automatic Protection Flow
+### Flusso di protezione automatica
 
 ```
   cmake --build .
@@ -129,7 +129,7 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
     Release tokens
 ```
 
-### Architecture
+### Architettura
 
 ```
                     ┌─────────────────┐
@@ -153,35 +153,35 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
     └─────────┘        └─────────┘        └─────────┘
 ```
 
-## Token Cost Model
+## Modello di costo dei token
 
-| Action | Tokens | Notes |
-|--------|--------|-------|
-| Normal compile | 1 | Baseline |
-| Heavy compile (Boost/gRPC) | 2–4 | Template-heavy |
-| Compile with /GL | +3 | LTCG codegen |
-| Link | 4 | Base link cost |
-| Link with /LTCG | 8–12 | Full LTCG |
+| Azione | Token | Notes |
+| -------- | -------- | ------- |
+| Compilazione normale | 1 | Valore di base |
+| Compilazione pesante (Boost/gRPC) | 2–4 | Ricca di modelli |
+| Compilazione con /GL | +3 | Generazione codice LTCG |
+| Link | 4 | Costo di base del linking |
+| Linking con /LTCG | 8–12 | LTCG completo |
 
-## Throttle Levels
+## Livelli di limitazione
 
-| Commit Ratio | Level | Behavior |
-|--------------|-------|----------|
-| < 80% | Normal | Grant tokens immediately |
-| 80–88% | Caution | Slower grants, delay 200 ms |
-| 88–92% | SoftStop | Significant delays, 500 ms |
-| > 92% | HardStop | Refuse new tokens |
+| Rapporto di commit | Level | Comportamento |
+| -------------- | ------- | ---------- |
+| < 80% | Normale | Concede token immediatamente |
+| 80–88% | Attenzione | Concessioni più lente, ritardo di 200 ms |
+| 88–92% | SoftStop | Ritardi significativi, 500 ms |
+| > 92% | HardStop | Rifiuta nuovi token |
 
-## Failure Classification
+## Classificazione degli errori
 
-When a build tool exits with an error, the governor classifies it:
+Quando uno strumento di compilazione termina con un errore, il gestore lo classifica:
 
-- **LikelyOOM**: High commit ratio + process peaked high + no compiler diagnostics
-- **LikelyPagingDeath**: Moderate pressure signals
-- **NormalCompileError**: Compiler diagnostics present in stderr
-- **Unknown**: Can't determine
+- **LikelyOOM**: Alto rapporto di commit + processo con picco elevato + nessuna informazione diagnostica del compilatore
+- **LikelyPagingDeath**: Segnali di pressione moderata
+- **NormalCompileError**: Informazioni diagnostiche del compilatore presenti nell'output di errore standard
+- **Unknown**: Impossibile determinare
 
-On OOM, you see:
+In caso di OOM, si visualizza:
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║  BUILD FAILED: Memory Pressure Detected                          ║
@@ -197,14 +197,14 @@ On OOM, you see:
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-## Safety Features
+## Funzionalità di sicurezza
 
-- **Fail-safe**: If governor unavailable, wrappers run tools ungoverned
-- **Lease TTL**: If wrapper crashes, tokens auto-reclaim after 30 min
-- **No deadlock**: Timeouts on all pipe operations
-- **Tool auto-detection**: Uses vswhere to find real cl.exe/link.exe
+- **Sicurezza**: Se il gestore non è disponibile, i wrapper eseguono gli strumenti senza controllo
+- **TTL della licenza**: Se il wrapper si arresta in modo anomalo, i token vengono automaticamente recuperati dopo 30 minuti
+- **Nessun deadlock**: Timeout su tutte le operazioni delle pipe
+- **Rilevamento automatico degli strumenti**: Utilizza vswhere per trovare le vere istanze di cl.exe/link.exe
 
-## CLI Commands
+## Comandi CLI
 
 ```powershell
 # Run a governed build
@@ -217,17 +217,17 @@ gov status
 gov run --no-start -- ninja -j 8
 ```
 
-## Environment Variables
+## Variabili d'ambiente
 
-| Variable | Description |
-|----------|-------------|
-| `GOV_REAL_CL` | Path to real cl.exe (auto-detected via vswhere) |
-| `GOV_REAL_LINK` | Path to real link.exe (auto-detected) |
-| `GOV_ENABLED` | Set by `gov run` to indicate governed mode |
-| `GOV_SERVICE_PATH` | Path to Gov.Service.exe for auto-start |
-| `GOV_DEBUG` | Set to "1" for verbose auto-start logging |
+| Variabile | Descrizione |
+| ---------- | ------------- |
+| `GOV_REAL_CL` | Percorso della vera istanza di cl.exe (rilevata automaticamente tramite vswhere) |
+| `GOV_REAL_LINK` | Percorso del file "link.exe" (rilevato automaticamente). |
+| `GOV_ENABLED` | Impostato da `gov run` per indicare la modalità "governata". |
+| `GOV_SERVICE_PATH` | Percorso del file "Gov.Service.exe" per l'avvio automatico. |
+| `GOV_DEBUG` | Impostare su "1" per abilitare la registrazione dettagliata dell'avvio automatico. |
 
-## Project Structure
+## Struttura del progetto
 
 ```
 build-governor/
@@ -249,16 +249,16 @@ build-governor/
 └── gov-env.cmd          # Manual PATH setup
 ```
 
-## Auto-Start Behavior
+## Comportamento dell'avvio automatico
 
-The wrappers use a global mutex to ensure only one governor instance runs.
-When multiple compilers start simultaneously:
+I wrapper utilizzano un mutex globale per garantire che solo un'istanza del "governatore" sia in esecuzione.
+Quando più compilatori vengono avviati contemporaneamente:
 
-1. First wrapper acquires mutex, checks if governor running
-2. If not, starts `Gov.Service.exe --background`
-3. Other wrappers wait on mutex, then connect to now-running governor
-4. Background mode: governor shuts down after 30 min idle
+1. Il primo wrapper acquisisce il mutex, verifica se il "governatore" è in esecuzione.
+2. Se non è in esecuzione, avvia `Gov.Service.exe --background`.
+3. Gli altri wrapper attendono il mutex, quindi si connettono al "governatore" ora in esecuzione.
+4. In modalità "background": il "governatore" si arresta dopo 30 minuti di inattività.
 
-## License
+## Licenza
 
 [MIT](LICENSE)
