@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.md">English</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -20,9 +20,9 @@
 
 Las compilaciones paralelas de C++ (`cmake --parallel`, `msbuild /m`, `ninja -j`) pueden fácilmente agotar la memoria del sistema:
 
-- Cada instancia de `cl.exe` puede usar de 1 a 4 GB de RAM (plantillas, optimización de enlace, muchos archivos de encabezado).
+- Cada instancia de `cl.exe` puede usar de 1 a 4 GB de RAM (plantillas, LTCG, muchos encabezados)
 - Los sistemas de compilación inician N trabajos paralelos y esperan lo mejor.
-- Cuando se agota la RAM: el sistema se congela, o `CL.exe` finaliza con código 1 (sin diagnóstico).
+- Cuando se agota la RAM: el sistema se congela, o `CL.exe` finaliza con el código 1 (sin diagnóstico).
 - La métrica clave es el **uso de memoria reservada**, no la "RAM libre".
 
 
@@ -82,9 +82,9 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 ## Paquetes de NuGet
 
 | Paquete | Versión | Descripción |
-| --------- | --------- | ------------- |
-| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | DTOs de mensajes compartidos para la comunicación entre cliente y servicio a través de tuberías con nombre. |
-| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Métricas de memoria de Windows, clasificación de errores de falta de memoria, inicio automático del cliente. |
+|---------|---------|-------------|
+| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | DTOs de mensajes compartidos para la comunicación cliente-servicio a través de tuberías con nombre. |
+| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Métricas de memoria de Windows, clasificación de errores de falta de memoria (OOM), inicio automático del cliente. |
 
 ```xml
 <!-- Gov.Protocol — message DTOs only (no Windows dependency) -->
@@ -155,33 +155,33 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 
 ## Modelo de costo de tokens
 
-| Acción | Tokens | Notes |
-| -------- | -------- | ------- |
-| Compilación normal | 1 | Valor base |
-| Compilación pesada (Boost/gRPC) | 2–4 | Uso intensivo de plantillas |
+| Acción | Tokens | Notas |
+|--------|--------|-------|
+| Compilación normal | 1 | Línea de base |
+| Compilación intensiva (Boost/gRPC) | 2–4 | Intensiva en plantillas |
 | Compilación con /GL | +3 | Generación de código LTCG |
-| Link | 4 | Costo base de enlace |
+| Enlace | 4 | Costo base de enlace |
 | Enlace con /LTCG | 8–12 | LTCG completo |
 
 ## Niveles de limitación
 
-| Ratio de uso de memoria | Level | Comportamiento |
-| -------------- | ------- | ---------- |
+| Relación de uso de memoria | Nivel | Comportamiento |
+|--------------|-------|----------|
 | < 80% | Normal | Otorga tokens inmediatamente |
-| 80–88% | Precaución | Otorga más lentamente, retraso de 200 ms |
+| 80–88% | Precaución | Otorga más lentamente, con un retraso de 200 ms |
 | 88–92% | SoftStop | Retrasos significativos, 500 ms |
-| > 92% | HardStop | No otorga nuevos tokens |
+| > 92% | HardStop | Niega nuevos tokens |
 
 ## Clasificación de fallos
 
 Cuando una herramienta de compilación finaliza con un error, el controlador lo clasifica:
 
-- **LikelyOOM**: Alto ratio de uso de memoria + el proceso alcanzó un pico alto + no hay diagnósticos del compilador.
+- **LikelyOOM**: Alta relación de uso de memoria + el proceso alcanzó un pico alto + no hay diagnósticos del compilador.
 - **LikelyPagingDeath**: Señales de presión moderada.
 - **NormalCompileError**: Diagnósticos del compilador presentes en stderr.
 - **Unknown**: No se puede determinar.
 
-En caso de falta de memoria, verá:
+En caso de falta de memoria (OOM), verá:
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║  BUILD FAILED: Memory Pressure Detected                          ║
@@ -201,7 +201,7 @@ En caso de falta de memoria, verá:
 
 - **Mecanismo de seguridad**: Si el controlador no está disponible, los wrappers ejecutan las herramientas sin control.
 - **TTL de concesión**: Si el wrapper falla, los tokens se recuperan automáticamente después de 30 minutos.
-- **Sin interbloqueos**: Tiempos de espera en todas las operaciones de tubería.
+- **Sin interbloqueo**: Tiempos de espera en todas las operaciones de tubería.
 - **Detección automática de herramientas**: Utiliza vswhere para encontrar cl.exe/link.exe reales.
 
 ## Comandos de la línea de comandos
@@ -220,12 +220,12 @@ gov run --no-start -- ninja -j 8
 ## Variables de entorno
 
 | Variable | Descripción |
-| ---------- | ------------- |
-| `GOV_REAL_CL` | Ruta al cl.exe real (detectada automáticamente a través de vswhere). |
-| `GOV_REAL_LINK` | Ruta al archivo link.exe (detectado automáticamente). |
-| `GOV_ENABLED` | Establecido por `gov run` para indicar el modo gestionado. |
-| `GOV_SERVICE_PATH` | Ruta al archivo Gov.Service.exe para el inicio automático. |
-| `GOV_DEBUG` | Establecer en "1" para habilitar el registro detallado del inicio automático. |
+|----------|-------------|
+| `GOV_REAL_CL` | Ruta al cl.exe real (detectada automáticamente mediante vswhere) |
+| `GOV_REAL_LINK` | Ruta al link.exe real (detectada automáticamente) |
+| `GOV_ENABLED` | Establecida por `gov run` para indicar el modo controlado. |
+| `GOV_SERVICE_PATH` | Ruta a Gov.Service.exe para el inicio automático. |
+| `GOV_DEBUG` | Establecer en "1" para un registro detallado del inicio automático. |
 
 ## Estructura del proyecto
 
@@ -249,16 +249,45 @@ build-governor/
 └── gov-env.cmd          # Manual PATH setup
 ```
 
-## Comportamiento del inicio automático
+## Comportamiento de inicio automático
 
-Los componentes utilizan un mutex global para asegurar que solo una instancia del gestor se ejecute.
-Cuando varios compiladores se inician simultáneamente:
+Los componentes utilizan un mutex global para asegurar que solo una instancia del "gobernador" se ejecute.
+Cuando múltiples compiladores se inician simultáneamente:
 
-1. El primer componente adquiere el mutex, verifica si el gestor está en ejecución.
+1. El primer componente adquiere el mutex, verifica si el "gobernador" está en ejecución.
 2. Si no, inicia `Gov.Service.exe --background`.
-3. Los demás componentes esperan el mutex y luego se conectan al gestor que ahora está en ejecución.
-4. Modo de segundo plano: el gestor se cierra después de 30 minutos de inactividad.
+3. Los demás componentes esperan el mutex y luego se conectan al "gobernador" que ahora está en ejecución.
+4. En modo de segundo plano: el "gobernador" se cierra automáticamente después de 30 minutos de inactividad.
+
+## Seguridad y Alcance de Datos
+
+Build Governor opera **completamente de forma local** en Windows: no realiza solicitudes de red, ni recopila datos de telemetría.
+
+- **Datos accedidos:** Supervisa la carga del sistema y la memoria por proceso a través de las API de Windows. Se comunica con las herramientas de compilación a través de tuberías con nombre (solo comunicación entre procesos local). El servicio del "gobernador" se cierra automáticamente después de 30 minutos de inactividad.
+- **Datos NO accedidos:** No realiza solicitudes de red. No recopila datos de telemetría. No almacena credenciales. No inspecciona archivos de compilación: el "gobernador" limita la concurrencia de procesos, pero no lee el código fuente ni los archivos binarios.
+- **Permisos requeridos:** Usuario estándar para la línea de comandos y los componentes. Administrador solo para la instalación del servicio de Windows.
+
+Consulte [SECURITY.md](SECURITY.md) para informar sobre vulnerabilidades.
+
+---
+
+## Cuadro de Evaluación
+
+| Categoría | Puntuación |
+|----------|-------|
+| Seguridad | 10/10 |
+| Manejo de Errores | 10/10 |
+| Documentación para Operadores | 10/10 |
+| Higiene en la Implementación | 10/10 |
+| Identidad | 10/10 |
+| **Overall** | **50/50** |
+
+---
 
 ## Licencia
 
 [MIT](LICENSE)
+
+---
+
+Creado por <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>

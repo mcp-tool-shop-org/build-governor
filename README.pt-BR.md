@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.md">English</a>
 </p>
 
 <p align="center">
@@ -14,11 +14,11 @@
   <a href="https://mcp-tool-shop-org.github.io/build-governor/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
 </p>
 
-**Proteção automática contra o esgotamento de memória durante a compilação de C++. Não são necessários passos manuais.**
+**Proteção automática contra o esgotamento de memória durante a compilação em C++. Não são necessários passos manuais.**
 
-## Por que?
+## Por que
 
-Compilações paralelas de C++ (`cmake --parallel`, `msbuild /m`, `ninja -j`) podem facilmente esgotar a memória do sistema:
+Compilações paralelas em C++ (`cmake --parallel`, `msbuild /m`, `ninja -j`) podem facilmente esgotar a memória do sistema:
 
 - Cada instância de `cl.exe` pode usar de 1 a 4 GB de RAM (templates, LTCG, muitos arquivos de cabeçalho)
 - Os sistemas de compilação iniciam N tarefas paralelas e esperam o melhor
@@ -32,9 +32,9 @@ O Build Governor é um controlador leve que **automaticamente** se posiciona ent
 2. **Concorrência adaptativa** baseada no uso de memória alocada, e não no número de tarefas
 3. **Falha silenciosa → diagnóstico acionável** — "Pressão de memória detectada, recomenda-se usar -j4"
 4. **Redução automática de velocidade** — as compilações diminuem a velocidade em vez de falhar
-5. **Segurança** — se o controlador estiver inativo, as ferramentas são executadas sem controle
+5. **Proteção contra falhas** — se o controlador estiver inativo, as ferramentas são executadas sem controle
 
-## Início Rápido (Proteção Automática)
+## Início rápido (Proteção automática)
 
 ```powershell
 # One-time setup (no admin required)
@@ -61,7 +61,7 @@ Para proteção contínua em todos os usuários:
 .\scripts\install-service.ps1
 ```
 
-## Modo Manual
+## Modo manual
 
 Se você preferir controle explícito:
 
@@ -82,8 +82,8 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 ## Pacotes NuGet
 
 | Pacote | Versão | Descrição |
-| --------- | --------- | ------------- |
-| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | DTOs de mensagens compartilhadas para comunicação cliente-servidor via pipes nomeados. |
+|---------|---------|-------------|
+| [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | DTOS de mensagens compartilhadas para comunicação cliente-serviço através de pipes nomeados. |
 | [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Métricas de memória do Windows, classificação de OOM, inicialização automática do cliente. |
 
 ```xml
@@ -94,9 +94,9 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 <PackageReference Include="Gov.Common" Version="1.*" />
 ```
 
-## Como Funciona
+## Como funciona
 
-### Fluxo de Proteção Automática
+### Fluxo de proteção automática
 
 ```
   cmake --build .
@@ -153,33 +153,33 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
     └─────────┘        └─────────┘        └─────────┘
 ```
 
-## Modelo de Custo de Tokens
+## Modelo de custo de tokens
 
-| Ação | Tokens | Notes |
-| -------- | -------- | ------- |
-| Compilação normal | 1 | Baseline (Referência) |
-| Compilação pesada (Boost/gRPC) | 2–4 | Intensiva em templates |
+| Ação | Tokens | Observações |
+|--------|--------|-------|
+| Compilação normal | 1 | Linha de base |
+| Compilação pesada (Boost/gRPC) | 2–4 | Intensivo em templates |
 | Compilação com /GL | +3 | Geração de código LTCG |
-| Link | 4 | Custo básico de link |
+| Link | 4 | Custo base de link |
 | Link com /LTCG | 8–12 | LTCG completo |
 
-## Níveis de Redução de Velocidade
+## Níveis de redução de velocidade
 
-| Taxa de Uso de Memória | Level | Comportamento |
-| -------------- | ------- | ---------- |
+| Taxa de uso de memória | Nível | Comportamento |
+|--------------|-------|----------|
 | < 80% | Normal | Concede tokens imediatamente |
-| 80–88% | Cuidado | Concessão mais lenta, atraso de 200 ms |
+| 80–88% | Atenção | Concessão mais lenta, atraso de 200 ms |
 | 88–92% | SoftStop | Atrasos significativos, 500 ms |
 | > 92% | HardStop | Recusa de novos tokens |
 
-## Classificação de Falha
+## Classificação de falhas
 
 Quando uma ferramenta de compilação termina com um erro, o controlador a classifica:
 
-- **LikelyOOM**: Alta taxa de uso de memória + o processo atingiu um pico alto + sem diagnósticos do compilador
-- **LikelyPagingDeath**: Sinais de pressão moderada
-- **NormalCompileError**: Diagnósticos do compilador presentes no stderr
-- **Unknown**: Não é possível determinar
+- **Provavelmente OOM**: Alta taxa de uso de memória + o processo atingiu um pico alto + sem diagnósticos do compilador
+- **Provavelmente falha por paginação**: Sinais de pressão moderada
+- **Erro de compilação normal**: Diagnósticos do compilador presentes no stderr
+- **Desconhecido**: Não é possível determinar
 
 Em caso de OOM, você verá:
 ```
@@ -197,14 +197,14 @@ Em caso de OOM, você verá:
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-## Recursos de Segurança
+## Recursos de segurança
 
-- **Segurança**: Se o controlador estiver indisponível, os wrappers executam as ferramentas sem controle
-- **TTL do Lease**: Se o wrapper falhar, os tokens são automaticamente recuperados após 30 minutos
+- **Proteção contra falhas**: Se o controlador estiver indisponível, os wrappers executam as ferramentas sem controle
+- **TTL de concessão**: Se o wrapper falhar, os tokens são automaticamente recuperados após 30 minutos
 - **Sem deadlock**: Timeouts em todas as operações de pipe
-- **Detecção automática de ferramentas**: Usa o vswhere para encontrar o cl.exe/link.exe real
+- **Detecção automática de ferramentas**: Usa vswhere para encontrar o cl.exe/link.exe real
 
-## Comandos da Linha de Comando
+## Comandos da linha de comando
 
 ```powershell
 # Run a governed build
@@ -217,17 +217,17 @@ gov status
 gov run --no-start -- ninja -j 8
 ```
 
-## Variáveis de Ambiente
+## Variáveis de ambiente
 
 | Variável | Descrição |
-| ---------- | ------------- |
+|----------|-------------|
 | `GOV_REAL_CL` | Caminho para o cl.exe real (detectado automaticamente via vswhere) |
-| `GOV_REAL_LINK` | Caminho para o arquivo link.exe (detectado automaticamente). |
-| `GOV_ENABLED` | Definido por `gov run` para indicar o modo gerenciado. |
-| `GOV_SERVICE_PATH` | Caminho para o arquivo Gov.Service.exe para inicialização automática. |
-| `GOV_DEBUG` | Defina como "1" para registro detalhado da inicialização automática. |
+| `GOV_REAL_LINK` | Caminho para o link.exe real (detectado automaticamente) |
+| `GOV_ENABLED` | Definido por `gov run` para indicar o modo controlado |
+| `GOV_SERVICE_PATH` | Caminho para Gov.Service.exe para inicialização automática |
+| `GOV_DEBUG` | Defina como "1" para registro detalhado da inicialização automática |
 
-## Estrutura do Projeto
+## Estrutura do projeto
 
 ```
 build-governor/
@@ -249,16 +249,45 @@ build-governor/
 └── gov-env.cmd          # Manual PATH setup
 ```
 
-## Comportamento da Inicialização Automática
+## Comportamento de inicialização automática
 
-Os wrappers utilizam um mutex global para garantir que apenas uma instância do gerenciador esteja em execução.
+Os wrappers utilizam um mutex global para garantir que apenas uma instância do "governor" esteja em execução.
 Quando vários compiladores são iniciados simultaneamente:
 
-1. O primeiro wrapper adquire o mutex, verifica se o gerenciador está em execução.
+1. O primeiro wrapper adquire o mutex, verifica se o "governor" está em execução.
 2. Se não estiver, inicia o `Gov.Service.exe --background`.
-3. Outros wrappers aguardam o mutex e, em seguida, conectam-se ao gerenciador que está em execução.
-4. Modo de fundo: o gerenciador é desligado após 30 minutos de inatividade.
+3. Os outros wrappers aguardam o mutex e, em seguida, conectam-se ao "governor" que está em execução.
+4. Modo de operação em segundo plano: o "governor" é desligado após 30 minutos de inatividade.
+
+## Segurança e Escopo de Dados
+
+O Build Governor opera **exclusivamente localmente** no Windows — sem requisições de rede, sem telemetria.
+
+- **Dados acessados:** Monitora a carga do sistema e a memória por processo através das APIs do Windows. Comunica-se com as ferramentas de compilação através de pipes nomeados (apenas comunicação local). O serviço do "governor" é desligado automaticamente após 30 minutos de inatividade.
+- **Dados NÃO acessados:** Sem requisições de rede. Sem telemetria. Sem armazenamento de credenciais. Sem inspeção de artefatos de compilação — o "governor" limita a concorrência de processos, mas não lê o código-fonte ou os binários.
+- **Permissões necessárias:** Usuário padrão para a linha de comando e os wrappers. Administrador apenas para a instalação do serviço do Windows.
+
+Consulte o arquivo [SECURITY.md](SECURITY.md) para relatar vulnerabilidades.
+
+---
+
+## Tabela de Avaliação
+
+| Categoria | Pontuação |
+|----------|-------|
+| Segurança | 10/10 |
+| Tratamento de Erros | 10/10 |
+| Documentação para Operadores | 10/10 |
+| Qualidade do Produto | 10/10 |
+| Identidade | 10/10 |
+| **Overall** | **50/50** |
+
+---
 
 ## Licença
 
 [MIT](LICENSE)
+
+---
+
+Desenvolvido por <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.md">English</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -20,13 +20,13 @@
 
 Le compilazioni C++ parallele (`cmake --parallel`, `msbuild /m`, `ninja -j`) possono facilmente esaurire la memoria del sistema:
 
-- Ogni istanza di `cl.exe` può utilizzare da 1 a 4 GB di RAM (modelli, ottimizzazione del collegamento, grandi quantità di header)
-- I sistemi di compilazione avviano N processi paralleli e sperano nel meglio
-- Quando la RAM si esaurisce: il sistema si blocca o `CL.exe è terminato con codice 1` (nessuna informazione diagnostica)
+- Ogni istanza di `cl.exe` può utilizzare da 1 a 4 GB di RAM (modelli, LTCG, header pesanti)
+- I sistemi di build avviano N processi paralleli e sperano nel meglio
+- Quando la RAM si esaurisce: il sistema si blocca o `CL.exe` termina con codice 1 (nessuna informazione diagnostica)
 - La metrica cruciale è il **Commit Charge**, non la "RAM libera"
 
 
-Build Governor è un gestore leggero che si posiziona **automaticamente** tra il tuo sistema di compilazione e il compilatore:
+Build Governor è un gestore leggero che si posiziona **automaticamente** tra il tuo sistema di build e il compilatore:
 
 1. **Protezione senza configurazione** — I wrapper avviano automaticamente il gestore alla prima compilazione
 2. **Concorrenza adattiva** basata sul commit charge, non sul numero di processi
@@ -34,7 +34,7 @@ Build Governor è un gestore leggero che si posiziona **automaticamente** tra il
 4. **Limitazione automatica** — le compilazioni rallentano invece di interrompersi
 5. **Sicurezza** — se il gestore non è attivo, gli strumenti vengono eseguiti senza controllo
 
-## Guida rapida (Protezione automatica)
+## Guida rapida (protezione automatica)
 
 ```powershell
 # One-time setup (no admin required)
@@ -47,7 +47,7 @@ msbuild /m:16
 ninja -j 8
 ```
 
-I wrapper eseguono automaticamente le seguenti operazioni:
+I wrapper eseguono automaticamente le seguenti azioni:
 - Avviano il gestore se non è in esecuzione
 - Monitorano la memoria e limitano l'attività quando necessario
 - Si arrestano dopo 30 minuti di inattività
@@ -82,7 +82,7 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 ## Pacchetti NuGet
 
 | Pacchetto | Versione | Descrizione |
-| --------- | --------- | ------------- |
+|---------|---------|-------------|
 | [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | DTO di messaggi condivisi per la comunicazione client-servizio tramite pipe denominate. |
 | [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Metriche di memoria di Windows, classificazione OOM, avvio automatico del client. |
 
@@ -155,18 +155,18 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 
 ## Modello di costo dei token
 
-| Azione | Token | Notes |
-| -------- | -------- | ------- |
+| Azione | Token | Note |
+|--------|--------|-------|
 | Compilazione normale | 1 | Valore di base |
 | Compilazione pesante (Boost/gRPC) | 2–4 | Ricca di modelli |
-| Compilazione con /GL | +3 | Generazione codice LTCG |
-| Link | 4 | Costo di base del linking |
-| Linking con /LTCG | 8–12 | LTCG completo |
+| Compilazione con /GL | +3 | Generazione LTCG |
+| Link | 4 | Costo di base del link |
+| Link con /LTCG | 8–12 | LTCG completo |
 
 ## Livelli di limitazione
 
-| Rapporto di commit | Level | Comportamento |
-| -------------- | ------- | ---------- |
+| Rapporto di commit | Livello | Comportamento |
+|--------------|-------|----------|
 | < 80% | Normale | Concede token immediatamente |
 | 80–88% | Attenzione | Concessioni più lente, ritardo di 200 ms |
 | 88–92% | SoftStop | Ritardi significativi, 500 ms |
@@ -174,9 +174,9 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 
 ## Classificazione degli errori
 
-Quando uno strumento di compilazione termina con un errore, il gestore lo classifica:
+Quando uno strumento di build termina con un errore, il gestore lo classifica:
 
-- **LikelyOOM**: Alto rapporto di commit + processo con picco elevato + nessuna informazione diagnostica del compilatore
+- **LikelyOOM**: Elevato rapporto di commit + processo con picco elevato + nessuna informazione diagnostica del compilatore
 - **LikelyPagingDeath**: Segnali di pressione moderata
 - **NormalCompileError**: Informazioni diagnostiche del compilatore presenti nell'output di errore standard
 - **Unknown**: Impossibile determinare
@@ -202,7 +202,7 @@ In caso di OOM, si visualizza:
 - **Sicurezza**: Se il gestore non è disponibile, i wrapper eseguono gli strumenti senza controllo
 - **TTL della licenza**: Se il wrapper si arresta in modo anomalo, i token vengono automaticamente recuperati dopo 30 minuti
 - **Nessun deadlock**: Timeout su tutte le operazioni delle pipe
-- **Rilevamento automatico degli strumenti**: Utilizza vswhere per trovare le vere istanze di cl.exe/link.exe
+- **Rilevamento automatico degli strumenti**: Utilizza vswhere per trovare le istanze reali di cl.exe/link.exe
 
 ## Comandi CLI
 
@@ -220,12 +220,12 @@ gov run --no-start -- ninja -j 8
 ## Variabili d'ambiente
 
 | Variabile | Descrizione |
-| ---------- | ------------- |
-| `GOV_REAL_CL` | Percorso della vera istanza di cl.exe (rilevata automaticamente tramite vswhere) |
-| `GOV_REAL_LINK` | Percorso del file "link.exe" (rilevato automaticamente). |
-| `GOV_ENABLED` | Impostato da `gov run` per indicare la modalità "governata". |
-| `GOV_SERVICE_PATH` | Percorso del file "Gov.Service.exe" per l'avvio automatico. |
-| `GOV_DEBUG` | Impostare su "1" per abilitare la registrazione dettagliata dell'avvio automatico. |
+|----------|-------------|
+| `GOV_REAL_CL` | Percorso dell'istanza reale di cl.exe (rilevato automaticamente tramite vswhere) |
+| `GOV_REAL_LINK` | Percorso dell'istanza reale di link.exe (rilevato automaticamente) |
+| `GOV_ENABLED` | Impostata da `gov run` per indicare la modalità gestita |
+| `GOV_SERVICE_PATH` | Percorso di Gov.Service.exe per l'avvio automatico |
+| `GOV_DEBUG` | Impostata su "1" per la registrazione dettagliata dell'avvio automatico |
 
 ## Struttura del progetto
 
@@ -249,16 +249,45 @@ build-governor/
 └── gov-env.cmd          # Manual PATH setup
 ```
 
-## Comportamento dell'avvio automatico
+## Comportamento di avvio automatico
 
-I wrapper utilizzano un mutex globale per garantire che solo un'istanza del "governatore" sia in esecuzione.
+I wrapper utilizzano un mutex globale per garantire che venga eseguita solo un'istanza del componente di controllo.
 Quando più compilatori vengono avviati contemporaneamente:
 
-1. Il primo wrapper acquisisce il mutex, verifica se il "governatore" è in esecuzione.
-2. Se non è in esecuzione, avvia `Gov.Service.exe --background`.
-3. Gli altri wrapper attendono il mutex, quindi si connettono al "governatore" ora in esecuzione.
-4. In modalità "background": il "governatore" si arresta dopo 30 minuti di inattività.
+1. Il primo wrapper acquisisce il mutex, verifica se il componente di controllo è in esecuzione.
+2. Se non lo è, avvia `Gov.Service.exe --background`.
+3. Gli altri wrapper attendono il mutex, quindi si connettono al componente di controllo ora in esecuzione.
+4. In modalità background: il componente di controllo si arresta dopo 30 minuti di inattività.
+
+## Sicurezza e ambito dei dati
+
+Build Governor opera **esclusivamente localmente** su Windows: non effettua richieste di rete, non raccoglie dati di telemetria.
+
+- **Dati accessibili:** Monitora l'utilizzo della memoria di sistema e la memoria per processo tramite le API di Windows. Comunica con gli strumenti di build tramite pipe con nome (solo IPC locale). Il servizio del componente di controllo si arresta automaticamente dopo 30 minuti di inattività.
+- **Dati NON accessibili:** Nessuna richiesta di rete. Nessuna telemetria. Nessun salvataggio di credenziali. Nessuna ispezione degli artefatti di build: il componente di controllo limita la concorrenza dei processi, ma non legge il codice sorgente o i file binari.
+- **Autorizzazioni richieste:** Utente standard per la riga di comando e i wrapper. Amministratore solo per l'installazione del servizio Windows.
+
+Consultare il file [SECURITY.md](SECURITY.md) per la segnalazione di vulnerabilità.
+
+---
+
+## Valutazione
+
+| Categoria | Punteggio |
+|----------|-------|
+| Sicurezza | 10/10 |
+| Gestione degli errori | 10/10 |
+| Documentazione per gli operatori | 10/10 |
+| Qualità del codice | 10/10 |
+| Identità | 10/10 |
+| **Overall** | **50/50** |
+
+---
 
 ## Licenza
 
 [MIT](LICENSE)
+
+---
+
+Creato da <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>

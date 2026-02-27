@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.md">English</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -14,9 +14,9 @@
   <a href="https://mcp-tool-shop-org.github.io/build-governor/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
 </p>
 
-**Protection automatique contre l'épuisement de la mémoire lors de la compilation C++. Aucune intervention manuelle requise.**
+**Protection automatique contre le manque de mémoire lors de la compilation C++. Aucune intervention manuelle requise.**
 
-## Pourquoi ?
+## Pourquoi
 
 Les compilations C++ parallèles (`cmake --parallel`, `msbuild /m`, `ninja -j`) peuvent facilement épuiser la mémoire du système :
 
@@ -30,11 +30,11 @@ Build Governor est un gestionnaire léger qui se place **automatiquement** entre
 
 1. **Protection sans configuration** : Les wrappers démarrent automatiquement le gestionnaire lors de la première compilation.
 2. **Concurrence adaptative** basée sur la mémoire allouée, et non sur le nombre de tâches.
-3. **Échec silencieux → diagnostic exploitable** : "Pression de mémoire détectée, recommandation : utilisez -j4".
+3. **Échec silencieux → diagnostic précis** : "Pression de mémoire détectée, recommandation : -j4".
 4. **Ralentissement automatique** : les compilations ralentissent au lieu de planter.
 5. **Sécurité intégrée** : si le gestionnaire est indisponible, les outils fonctionnent sans contrôle.
 
-## Démarrage rapide (protection automatique)
+## Démarrage rapide (Protection automatique)
 
 ```powershell
 # One-time setup (no admin required)
@@ -79,12 +79,12 @@ dotnet run --project src/Gov.Service -c Release
 bin/cli/gov.exe run -- cmake --build . --parallel 16
 ```
 
-## Paquets NuGet
+## Packages NuGet
 
-| Paquet | Version | Description |
-| --------- | --------- | ------------- |
+| Package | Version | Description |
+|---------|---------|-------------|
 | [`Gov.Protocol`](https://www.nuget.org/packages/Gov.Protocol) | [![NuGet](https://img.shields.io/nuget/v/Gov.Protocol)](https://www.nuget.org/packages/Gov.Protocol) | DTOs de messages partagés pour la communication client-service via des pipes nommés. |
-| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Métriques de mémoire Windows, classification de la fin de mémoire (OOM), démarrage automatique du client. |
+| [`Gov.Common`](https://www.nuget.org/packages/Gov.Common) | [![NuGet](https://img.shields.io/nuget/v/Gov.Common)](https://www.nuget.org/packages/Gov.Common) | Métriques de mémoire Windows, classification des erreurs de mémoire insuffisante, démarrage automatique du client. |
 
 ```xml
 <!-- Gov.Protocol — message DTOs only (no Windows dependency) -->
@@ -156,32 +156,32 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 ## Modèle de coût des jetons
 
 | Action | Jetons | Notes |
-| -------- | -------- | ------- |
+|--------|--------|-------|
 | Compilation normale | 1 | Valeur de référence |
-| Compilation lourde (Boost/gRPC) | 2–4 | Riche en modèles |
+| Compilation lourde (Boost/gRPC) | 2–4 | Utilisation intensive de modèles |
 | Compilation avec /GL | +3 | Génération de code LTCG |
-| Link | 4 | Coût de liaison de base |
+| Liaison | 4 | Coût de base de la liaison |
 | Liaison avec /LTCG | 8–12 | LTCG complet |
 
 ## Niveaux de limitation
 
-| Ratio de mémoire allouée | Level | Comportement |
-| -------------- | ------- | ---------- |
+| Ratio de mémoire allouée | Niveau | Comportement |
+|--------------|-------|----------|
 | < 80% | Normal | Attribution immédiate des jetons |
-| 80–88 % | Attention | Attribution plus lente, délai de 200 ms |
-| 88–92 % | SoftStop | Délai important, 500 ms |
+| 80–88% | Attention | Attribution plus lente, délai de 200 ms |
+| 88–92% | SoftStop | Délai important, 500 ms |
 | > 92% | HardStop | Refus de nouveaux jetons |
 
 ## Classification des erreurs
 
 Lorsqu'un outil de compilation se termine avec une erreur, le gestionnaire la classe :
 
-- **LikelyOOM** : Ratio de mémoire allouée élevé + pic élevé du processus + absence de diagnostics du compilateur.
+- **LikelyOOM** : Ratio de mémoire allouée élevé + pic élevé de la consommation du processus + absence de diagnostics du compilateur.
 - **LikelyPagingDeath** : Signaux de pression de mémoire modérés.
 - **NormalCompileError** : Diagnostics du compilateur présents dans la sortie d'erreur standard.
-- **Inconnu** : Impossible de déterminer.
+- **Unknown** : Impossible de déterminer.
 
-En cas de fin de mémoire, vous voyez :
+En cas d'erreur de mémoire insuffisante, vous verrez :
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║  BUILD FAILED: Memory Pressure Detected                          ║
@@ -200,11 +200,11 @@ En cas de fin de mémoire, vous voyez :
 ## Fonctionnalités de sécurité
 
 - **Sécurité intégrée** : Si le gestionnaire est indisponible, les wrappers exécutent les outils sans contrôle.
-- **Durée de vie des jetons** : Si le wrapper plante, les jetons sont automatiquement récupérés après 30 minutes.
-- **Pas de blocage** : Délais de temps pour toutes les opérations de pipe.
-- **Détection automatique des outils** : Utilise vswhere pour trouver les vraies versions de cl.exe/link.exe.
+- **TTL de la période de location** : Si le wrapper plante, les jetons sont automatiquement récupérés après 30 minutes.
+- **Pas de blocage** : Délais de temporisation pour toutes les opérations de pipe.
+- **Détection automatique des outils** : Utilise vswhere pour trouver les instances réelles de cl.exe/link.exe.
 
-## Commandes de l'interface de ligne de commande
+## Commandes CLI
 
 ```powershell
 # Run a governed build
@@ -220,12 +220,12 @@ gov run --no-start -- ninja -j 8
 ## Variables d'environnement
 
 | Variable | Description |
-| ---------- | ------------- |
-| `GOV_REAL_CL` | Chemin vers le vrai cl.exe (détecté automatiquement via vswhere) |
-| `GOV_REAL_LINK` | Chemin d'accès à l'exécutable link.exe (détecté automatiquement). |
-| `GOV_ENABLED` | Défini par `gov run` pour indiquer le mode géré. |
-| `GOV_SERVICE_PATH` | Chemin d'accès à Gov.Service.exe pour le démarrage automatique. |
-| `GOV_DEBUG` | Définir sur "1" pour activer la journalisation détaillée du démarrage automatique. |
+|----------|-------------|
+| `GOV_REAL_CL` | Chemin vers l'instance réelle de cl.exe (détecté automatiquement via vswhere). |
+| `GOV_REAL_LINK` | Chemin vers l'instance réelle de link.exe (détecté automatiquement). |
+| `GOV_ENABLED` | Définie par `gov run` pour indiquer le mode géré. |
+| `GOV_SERVICE_PATH` | Chemin vers Gov.Service.exe pour le démarrage automatique. |
+| `GOV_DEBUG` | Définie sur "1" pour activer la journalisation détaillée du démarrage automatique. |
 
 ## Structure du projet
 
@@ -251,14 +251,43 @@ build-governor/
 
 ## Comportement du démarrage automatique
 
-Les wrappers utilisent un mutex global pour garantir qu'une seule instance du gestionnaire est en cours d'exécution.
+Les programmes d'enveloppe utilisent un mutex global pour garantir qu'une seule instance du gestionnaire s'exécute.
 Lorsque plusieurs compilateurs démarrent simultanément :
 
-1. Le premier wrapper acquiert le mutex, vérifie si le gestionnaire est en cours d'exécution.
+1. Le premier programme d'enveloppe acquiert le mutex, vérifie si le gestionnaire est en cours d'exécution.
 2. Si ce n'est pas le cas, il démarre `Gov.Service.exe --background`.
-3. Les autres wrappers attendent le mutex, puis se connectent au gestionnaire en cours d'exécution.
+3. Les autres programmes d'enveloppe attendent l'acquisition du mutex, puis se connectent au gestionnaire qui est maintenant en cours d'exécution.
 4. En mode arrière-plan : le gestionnaire s'arrête après 30 minutes d'inactivité.
+
+## Sécurité et portée des données
+
+Build Governor fonctionne **entièrement localement** sur Windows : aucune requête réseau, aucune télémétrie.
+
+- **Données accessibles :** Surveille la charge du système et la mémoire par processus via les API Windows. Communique avec les outils de construction via des canaux nommés (communication locale uniquement). Le service du gestionnaire s'arrête automatiquement après 30 minutes d'inactivité.
+- **Données non accessibles :** Aucune requête réseau. Aucune télémétrie. Aucun stockage d'informations d'identification. Aucune inspection des artefacts de construction : le gestionnaire limite la concurrence des processus, mais ne lit pas le code source ni les binaires.
+- **Autorisations requises :** Utilisateur standard pour l'interface de ligne de commande et les programmes d'enveloppe. Administrateur uniquement pour l'installation du service Windows.
+
+Consultez [SECURITY.md](SECURITY.md) pour signaler les vulnérabilités.
+
+---
+
+## Tableau de bord
+
+| Catégorie | Score |
+|----------|-------|
+| Sécurité | 10/10 |
+| Gestion des erreurs | 10/10 |
+| Documentation pour les utilisateurs | 10/10 |
+| Qualité du code | 10/10 |
+| Identité | 10/10 |
+| **Overall** | **50/50** |
+
+---
 
 ## Licence
 
 [MIT](LICENSE)
+
+---
+
+Créé par <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>
