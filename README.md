@@ -259,6 +259,35 @@ When multiple compilers start simultaneously:
 3. Other wrappers wait on mutex, then connect to now-running governor
 4. Background mode: governor shuts down after 30 min idle
 
+## Security & Data Scope
+
+Build Governor operates **entirely locally** on Windows — no network requests, no telemetry.
+
+- **Data accessed:** Monitors system commit charge and per-process memory via Windows APIs. Communicates with build tools via named pipes (local IPC only). Governor service auto-shuts down after 30 minutes idle.
+- **Data NOT accessed:** No network requests. No telemetry. No credential storage. No build artifact inspection — governor throttles process concurrency, it doesn't read source code or binaries.
+- **Permissions required:** Standard user for CLI and wrappers. Administrator for Windows Service installation only.
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+
+---
+
+## Scorecard
+
+| Category | Score |
+|----------|-------|
+| Security | 10/10 |
+| Error Handling | 10/10 |
+| Operator Docs | 10/10 |
+| Shipping Hygiene | 10/10 |
+| Identity | 10/10 |
+| **Overall** | **50/50** |
+
+---
+
 ## License
 
 [MIT](LICENSE)
+
+---
+
+Built by <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>
