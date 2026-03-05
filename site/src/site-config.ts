@@ -15,7 +15,7 @@ export const config: SiteConfig = {
     headlineAccent: 'builds that slow down instead of crashing.',
     description: 'Lightweight governor that sits between your build system and the compiler. Adaptive concurrency based on commit charge — zero config, automatic throttling, actionable OOM diagnostics.',
     primaryCta: { href: '#quick-start', label: 'Get started' },
-    secondaryCta: { href: '#features', label: 'Learn more' },
+    secondaryCta: { href: 'handbook/', label: 'Read the Handbook' },
     previews: [
       { label: 'Setup', code: '.\\scripts\\enable-autostart.ps1' },
       { label: 'Build', code: 'cmake --build . --parallel 16' },
