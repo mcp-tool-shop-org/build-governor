@@ -7,4 +7,7 @@
     <Project Path="src/Gov.Wrapper.CL/Gov.Wrapper.CL.csproj" />
     <Project Path="src/Gov.Wrapper.Link/Gov.Wrapper.Link.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Gov.Tests/Gov.Tests.csproj" />
+  </Folder>
 </Solution>

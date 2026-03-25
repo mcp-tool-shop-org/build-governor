@@ -8,7 +8,7 @@
 
     <!-- NuGet package metadata -->
     <PackageId>Gov.Protocol</PackageId>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Description>Shared message DTOs for Build Governor client-service communication. Defines request/response records for token acquisition, release, heartbeat, and status queries over named pipes.</Description>
     <Authors>mcp-tool-shop</Authors>
     <Company>MCP Tool Shop</Company>

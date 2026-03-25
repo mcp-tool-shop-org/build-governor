@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-03-25
+
+### Added
+- `Gov.Tests` — 20 xUnit tests for `FailureClassifier` and `CalculateTokenBudget`
+- CI workflow (`ci.yml`) with build + test on push
+
 ## [1.0.2] - 2026-02-27
 
 ### Changed
@@ -29,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - NuGet package publishing via GitHub Actions
 - Landing page using @mcptoolshop/site-theme
 
-[Unreleased]: https://github.com/mcp-tool-shop-org/build-governor/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/mcp-tool-shop-org/build-governor/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/mcp-tool-shop-org/build-governor/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/mcp-tool-shop-org/build-governor/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/mcp-tool-shop-org/build-governor/releases/tag/v1.0.1
