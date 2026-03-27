@@ -174,12 +174,13 @@ bin/cli/gov.exe run -- cmake --build . --parallel 16
 
 ## Failure Classification
 
-When a build tool exits with an error, the governor classifies it:
+When a build tool exits, the governor classifies the result using an evidence-weighted model (commit ratio, process peak memory, stderr diagnostics, execution duration):
 
-- **LikelyOOM**: High commit ratio + process peaked high + no compiler diagnostics
-- **LikelyPagingDeath**: Moderate pressure signals
+- **Success**: Exit code 0 — no further analysis
+- **LikelyOOM**: High commit ratio + process peaked high + no compiler diagnostics (evidence >= 0.6)
+- **LikelyPagingDeath**: Moderate pressure signals (evidence >= 0.4)
 - **NormalCompileError**: Compiler diagnostics present in stderr
-- **Unknown**: Can't determine
+- **Unknown**: Can't determine the cause
 
 On OOM, you see:
 ```
@@ -200,9 +201,11 @@ On OOM, you see:
 ## Safety Features
 
 - **Fail-safe**: If governor unavailable, wrappers run tools ungoverned
-- **Lease TTL**: If wrapper crashes, tokens auto-reclaim after 30 min
-- **No deadlock**: Timeouts on all pipe operations
+- **Lease TTL**: If wrapper crashes, tokens auto-reclaim after 30 minutes (warning logged at 10 minutes)
+- **No deadlock**: Timeouts on all pipe operations (2 s connect, 60 s acquire, 5 s release)
 - **Tool auto-detection**: Uses vswhere to find real cl.exe/link.exe
+- **Singleton**: Global mutex prevents multiple governor instances
+- **GPU awareness**: Displays NVIDIA GPU memory/utilization at startup via nvidia-smi
 
 ## CLI Commands
 
@@ -217,6 +220,15 @@ gov status
 gov run --no-start -- ninja -j 8
 ```
 
+## Token Budget Defaults
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| GbPerToken | 2.0 | GB of available commit per token |
+| SafetyReserveGb | 8.0 | GB always kept free |
+| MinTokens | 1 | Floor even under pressure |
+| MaxTokens | 32 | Ceiling to prevent runaway |
+
 ## Environment Variables
 
 | Variable | Description |
@@ -225,7 +237,7 @@ gov run --no-start -- ninja -j 8
 | `GOV_REAL_LINK` | Path to real link.exe (auto-detected) |
 | `GOV_ENABLED` | Set by `gov run` to indicate governed mode |
 | `GOV_SERVICE_PATH` | Path to Gov.Service.exe for auto-start |
-| `GOV_DEBUG` | Set to "1" for verbose auto-start logging |
+| `GOV_DEBUG` | Set to "1" for verbose auto-start and idle-timeout logging |
 
 ## Project Structure
 
